@@ -2275,7 +2275,15 @@ static void touchTask(void *pvParameters)
       {
         printf("BARCODE: |%s|\n",inputString.c_str());
 
-        if(inputString.indexOf("MN:")==-1)
+        if(inputString=="fxrst")
+        {
+            esp_restart();
+        }
+        else if(inputString=="fxrstenc")
+        {
+            resetCounters();
+        }
+        else if(inputString.indexOf("MN:")==-1)
         {
             if(come_input_barcode)
             {
