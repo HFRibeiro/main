@@ -59,7 +59,7 @@
 #include "mongoose.h"
 
 //Software Version
-const String version = "2.9";
+const String version = "3.0";
 
 //Uart buffer size
 #define BUF_SIZE (1024)
@@ -113,12 +113,12 @@ SHT1x sht1x(dataPin, clockPin);
 
 
 /* Constants that aren't configurable in menuconfig */
-#define WEB_SERVER "172.16.1.111"
+#define WEB_SERVER "10.42.0.1"
 //#define WEB_SERVER "192.168.1.200"
-String ipSend = "172.16.1.111";
+String ipSend = "10.42.0.1";
 #define WEB_PORT 80
 
-#define EXAMPLE_SERVER_IP   "172.16.1.111"
+#define EXAMPLE_SERVER_IP   "10.42.0.1"
 #define EXAMPLE_SERVER_PORT "80"
 //#define EXAMPLE_FILENAME "/fluxodata.bin"
 String file_update = "";
@@ -745,6 +745,15 @@ void mongoose_event_handler(struct mg_connection *nc, int ev, void *evData) {
             updating = true;
           }
       }
+      else if(func == "ping")
+      {
+        String data = "pong";
+        mg_send_head(nc, 200, data.length(), "Content-Type: text/plain");
+        mg_printf(nc, "%s", data.c_str());
+
+        printf("Responder pong\n");
+
+      }
 
 			char *p;
 			p = strtok(query_string, "&");
@@ -1110,7 +1119,7 @@ static void clientTask(void *pvParameters)
 {
 
   #ifdef DEBUG_CLIENT_TIME
-	t1 = clock();
+	//t1 = clock();
   #endif
 	while(1)
 	{
@@ -1169,18 +1178,18 @@ static void clientTask(void *pvParameters)
         url += ipSend;
         url += "\r\nUser-Agent: esp-idf/1.0 esp32\r\n\r\n";
 
-				 requestHttpNoRead(url);
+				requestHttpNoRead(url);
 				//if(!sucess); ////printf("\n\nERROR ON CLIENT_TASK\n\n");
 
         #ifdef DEBUG_CLIENT_TIME
 
-        t2 = clock();
+        //t2 = clock();
 
-				int TimeStamp = ((float)(t2 - t1) / CLOCKS_PER_SEC ) * 1000;
+				//int TimeStamp = ((float)(t2 - t1) / CLOCKS_PER_SEC ) * 1000;
 
 				//printf("Client Request: %d TimeStamp: %d\n",countRequest,TimeStamp);
 
-				t1 = clock();
+				//t1 = clock();
 
         #endif
 
@@ -1619,6 +1628,10 @@ void sendInterrupt(int pino)
         else url += digitalRead(INPUT_PINS[i]);
       }
       url += "&usb1=dataUSB";
+      url += "&temp=";
+      url += String(temperature);
+      url += "&hum=";
+      url += String(humidity);
 			url += "&timeStamp=";
 			url += millis();
 			url += " HTTP/1.0\r\nHost: ";
@@ -1655,6 +1668,10 @@ void sendOverFlow(int pin)
         else url += digitalRead(INPUT_PINS[i]);
       }
       url += "&usb1=dataUSB";
+      url += "&temp=";
+      url += String(temperature);
+      url += "&hum=";
+      url += String(humidity);
 			url += "&timeStamp=";
 			url += millis();
 			url += " HTTP/1.0\r\nHost: ";
@@ -1689,14 +1706,19 @@ void sendMenu(String desc)
         else url += digitalRead(INPUT_PINS[i]);
       }
       url += "&usb1=dataUSB";
+      url += "&temp=";
+      url += String(temperature);
+      url += "&hum=";
+      url += String(humidity);
 			url += "&timeStamp=";
 			url += millis();
 			url += " HTTP/1.0\r\nHost: ";
       url += ipSend;
       url += "\r\nUser-Agent: esp-idf/1.0 esp32\r\n\r\n";
 
-			bool sucess = requestHttpNoRead(url);
-			if(!sucess); //printf("\n\nERROR ON sendMenu\n\n");
+      requestHttpNoRead(url);
+			//bool sucess = requestHttpNoRead(url);
+			//if(!sucess); //printf("\n\nERROR ON sendMenu\n\n");
 	}
 	else
 	{
@@ -1744,18 +1766,21 @@ void drawLCD()
 	if(ONLINE)
 	{
 
-    String map_ip = network;
-    map_ip.replace("fluxotec","");
-    map_ip += "/";
-    String finalIp = MyAddr;
-    finalIp.replace("10.42.1.","");
-    String ip_rec = "";
-    if(finalIp.length()<3) ip_rec+="0";
-    ip_rec += finalIp;
-    map_ip += ip_rec;
-		drawIP((char*)map_ip.c_str());
-		drawSignal();
-		drawID();
+	    String map_ip = network;
+	    String id_net = network;
+	    id_net.replace("fluxotecDS0","");
+	    map_ip.replace("fluxotec","");
+	    map_ip += "/";
+	    String finalIp = MyAddr;
+	    //finalIp.replace("10.42."+id_net+".","");
+      finalIp.replace("10.42.0.","");
+	    String ip_rec = "";
+	    if(finalIp.length()<3) ip_rec+="0";
+	    ip_rec += finalIp;
+	    map_ip += ip_rec;
+	    drawIP((char*)map_ip.c_str());
+	    drawSignal();
+	    drawID();
 	}
 	else
 	{
@@ -2749,7 +2774,7 @@ static void keypadTask(void *pvParameters)
 
 				break;
 			}
-			//printf("Pressed: %c\n",customKey);
+			printf("Pressed: %c\n",customKey);
 		}
 
 		vTaskDelay(100 / portTICK_RATE_MS);
@@ -2879,7 +2904,7 @@ static void keypadTask2(void *pvParameters)
 
 				break;
 			}
-			//printf("Pressed: %c\n",customKey);
+			printf("Pressed: %c\n",customKey);
 		}
 
 		vTaskDelay(100 / portTICK_RATE_MS);
@@ -2902,7 +2927,7 @@ static void readInputsTestMenu(void *pvParameters)
     {
   	  if(heart)heart = false;
   	  else heart = true;
-  	  digitalWrite(rele,heart);
+  	  //digitalWrite(rele,heart);
   	  HeartTimeStamp = millis();
     }
 
@@ -2976,9 +3001,9 @@ void read_offline_config()
 {
   id_module = memory.getUInt("ID",0);
   //printf("Read ID = %d\n",id_module);
-  network = memory.getString("NT","fluxotecDS01");
+  network = memory.getString("NT",network);
   //printf("Read NT = %s\n",network.c_str());
-  network_pass = memory.getString("NTP","fluxotec01");
+  network_pass = memory.getString("NTP",network_pass);
   //printf("Read NTP = %s\n",network_pass.c_str());
   hardware_version = memory.getString("HV","0");
   //printf("Read hardware_version = %s\n",hardware_version.c_str());
@@ -3407,7 +3432,7 @@ extern "C" void app_main()
   //if BT1 and BT2 are clicked enter test menu
   if(digitalRead(BT1) && digitalRead(BT2))
   {
-    network = memory.getString("NT","fluxotecDS01");
+    network = memory.getString("NT",network);
     //printf("Read NT = %s\n",network.c_str());
     //if define LCD MODULE accept entering test menu
     #ifdef LCD_MODULE
